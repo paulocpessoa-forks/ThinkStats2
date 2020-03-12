@@ -29,4 +29,13 @@ print(f'pearson_skewness: {pearson_skewness}')
 print(f'Cov: {cov}')
 print(f'Pearson Correlation: {pearson_corr}')
 print(f'Spearman_corr: {spearman_corr}')
+think_paulo.estimate_1()
+think_paulo.estimate2()
+
+sample_means = think_paulo.simulate_sample(mu=90, sigma=7.5, n=9, m=1000)
+print(f'Sample mean: {np.mean(sample_means)}')
+print(f'CI interval 5-95: {np.percentile(sample_means,5)} - {np.percentile(sample_means,95)}')
+print(f'Standard Error: {think_paulo.rmse(sample_means,90)}')
+
 a = 1
+
