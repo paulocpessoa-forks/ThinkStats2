@@ -8,7 +8,7 @@ import math
 
 
 class UnimplementedMethodException(Exception):
-
+    pass
 
 class HistP:
     """
@@ -119,9 +119,9 @@ def person_correlation(amostra_1, amostra_2):
     @param amostra_2:
     @return: pearson_corr
 
-    Pearson’s correlation is always between -1 and +1 (including both). If ρ is
+    Pearson’s correlation is always between -1 and +1 (including both). If ϝ is
     positive, we say that the correlation is positive, which means that when one
-    variable is high, the other tends to be high. If ρ is negative, the correlation
+    variable is high, the other tends to be high. If ϝ is negative, the correlation
     is negative, so when one variable is high, the other is low.
     """
     mean_1 = raw_moment(amostra_1, 1)
@@ -220,6 +220,7 @@ class HypotesisTest(object):
     def run_model(self):
         raise UnimplementedMethodException()
 
+
 class CoinTest(HypotesisTest):
 
     def test_statistic(self, data):
@@ -231,4 +232,64 @@ class CoinTest(HypotesisTest):
         heads, tails = self.data
         n = heads + tails
         sample = [random.choice('HT') for _ in range(n)]
-        hist
+        hist = HistP(sample).d
+        data = hist['H'], hist['T']
+        return data
+
+
+class DiffMeansPermute(HypotesisTest):
+
+    def test_statistic(self, data):
+        group1, group2 = data
+        test_stat = abs(group1.mean() - group2.mean())
+        return test_stat
+
+    def make_model(self):
+        group1, group2 = self.data
+        self.n, self.m = len(group1), len(group2)
+        self.pool = np.hstack((group1,group1))
+
+    def run_model(self):
+        np.random.shuffle(self.pool)
+        data = self.pool[:self.n], self.pool[self.n:]
+        return data
+
+
+class DiffMeansOneSided(DiffMeansPermute):
+
+    def test_statistic(self, data):
+        group1, group2 = data
+        test_stat = group1.mean() - group2.mean()
+        return test_stat
+
+
+class CorrelatonPermute(HypotesisTest):
+
+    def test_statistic(self, data):
+        xs, ys = data
+        test_stat = person_correlation(xs, ys)
+        return test_stat
+
+    def run_model(self):
+        xs, ys = self.data
+        xs = np.random.permutation(xs)
+        return xs, ys
+
+
+class DiceTest(HypotesisTest):
+
+    def test_statistic(self, data):
+        observed = data
+        n = np.sum(observed)
+        expected = np.ones(6) * n / 6
+        test_stat = np.sum(abs(observed-expected))
+        return test_stat
+
+    def run_model(self):
+        n = np.sum(self.data)
+        values = [1, 2, 3, 4, 5, 6]
+        choices = [np.random.choice(values) for _ in range(n)]
+        hist = HistP(choices).d
+        xs = np.random.permutation(xs)
+        return xs, ys
+
