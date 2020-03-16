@@ -65,3 +65,5 @@ docs/_build/
 
 # Jupyter Files
 .ipynb_checkpoints/
+/code/.vscode/launch.json
+/code/.vscode/settings.json

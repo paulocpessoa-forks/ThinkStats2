@@ -5,16 +5,20 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 import math
+import thinkstats2
 
 
 class UnimplementedMethodException(Exception):
     pass
 
 class HistP:
-    """
-    Uma classe que contém um dicionário
-    """
 
+    """    Uma classe que contém um dicionário
+  
+    
+    Returns:
+        [type] -- [description]
+    """
     def __init__(self, obj):
         self.d = {}
 
@@ -199,13 +203,29 @@ def simulate_sample(mu=90, sigma=7.5, n=9, m=1000):
 
 
 class HypotesisTest(object):
-
+    """[summary]
+    
+    Arguments:
+        object {[type]} -- [description]
+    
+   
+    Returns:
+        [type] -- [description]
+    """
     def __init__(self, data):
         self.data = data
         self.make_model()
         self.actual = self.test_statistic(data)
 
     def pvalue(self,iters=1000):
+        """[summary]
+        
+        Keyword Arguments:
+            iters {int} -- The number of tests that will be made (default: {1000})
+        
+        Returns:
+            float -- The pvalue of the test
+        """        
         self.test_stats = [self.test_statistic(self.run_model())
                            for _ in range(iters)]
         count = sum(1 for x in self.test_stats if x >= self.actual)
@@ -288,8 +308,101 @@ class DiceTest(HypotesisTest):
     def run_model(self):
         n = np.sum(self.data)
         values = [1, 2, 3, 4, 5, 6]
+        np.random.choice(values)
         choices = [np.random.choice(values) for _ in range(n)]
         hist = HistP(choices).d
-        xs = np.random.permutation(xs)
-        return xs, ys
+        freqs = [hist.get(i+1,0) for i in range(6)]
+        return freqs
 
+
+class DiceChiTest (DiceTest):
+    """Execute hipotese testing on dice rolls using chi-squared method
+    
+    Arguments:
+        DiceTest {List of int} -- A list of the sum of each dice roll ordered.
+    
+    """
+    def test_statistic(self, data):
+        observed = data
+        n = np.sum(data)
+        expected = np.ones(6) * n / 6
+        test_stat = np.sum((observed-expected)**2/expected)
+        return test_stat
+
+
+class PregLengthTest(thinkstats2.HypothesisTest):
+
+    def MakeModel(self):
+        firsts, others = self.data
+        self.n = len(firsts)
+        self.pool = np.hstack((firsts, others))
+
+        pmf = thinkstats2.Pmf(self.pool)
+        self.values = range(35, 44)
+        self.expected_probs = np.array(pmf.Probs(self.values))
+
+    def RunModel(self):
+        np.random.shuffle(self.pool)
+        data = self.pool[:self.n], self.pool[self.n:]
+        return data
+    
+    def TestStatistic(self, data):
+        firsts, others = data
+        stat = self.ChiSquared(firsts) + self.ChiSquared(others)
+        return stat
+
+    def ChiSquared(self, lengths):
+        hist = thinkstats2.Hist(lengths)
+        observed = np.array(hist.Freqs(self.values))
+        expected = self.expected_probs * len(lengths)
+        stat = sum((observed - expected)**2 / expected)
+        return stat
+
+
+def least_squares(xs, ys):
+    meanx, varx = np.mean(xs), np.var(xs)
+    meany = np.mean(ys)
+    slope = covariance(xs, ys) / varx
+    inter = meany - slope * meanx
+    return inter, slope
+
+
+def fitLine(xs, inter, slope):
+    fit_xs = np.sort(xs)
+    fit_ys = inter + slope * fit_xs
+    return fit_xs, fit_ys
+
+
+def Residuals(xs, ys, inter, slope):
+    xs = np.asarray(xs)
+    ys = np.asarray(ys)
+    res = ys - (inter + slope * xs)
+    return res
+
+
+def CoefDetermination(ys, res):
+    return 1 - np.var(res) / np.var(ys)
+
+
+class SlopeTest(thinkstats2.HypothesisTest):
+    def TestStatistic(self, data):
+        ages, weights = data
+        _, slope = least_squares(ages, weights)
+        return slope
+        
+    def MakeModel(self):
+        _, weights = self.data
+        self.ybar = weights.mean()
+        self.res = weights - self.ybar
+    
+    def RunModel(self):
+        ages, _ = self.data
+        weights = self.ybar + np.random.permutation(self.res)
+        return ages, weights
+
+def make_expo_samples(beta=2.0, iters=1000):
+    samples = []
+    for n in [1, 10, 100]:
+        sample = [np.sum(np.random.exponential(beta, n)) for _ in range(iters)]
+        samples.append((n, sample))
+    return samples
